@@ -659,8 +659,8 @@ inline std::string get_remote_addr(socket_t sock) {
 
 inline bool is_file(const std::string& path)
 {
-    struct stat st;
-    return stat(path.c_str(), &st) >= 0 && S_ISREG(st.st_mode);
+    struct _stati64 st;
+    return _stati64(path.c_str(), &st) >= 0 && S_ISREG(st.st_mode);
 }
 
 inline bool is_dir(const std::string& path)
@@ -794,11 +794,11 @@ inline const char* get_header_value(
     return def;
 }
 
-inline int get_header_value_int(const Headers& headers, const char* key, int def = 0)
+inline size_t get_header_value_size(const Headers& headers, const char* key, int def = 0)
 {
     auto it = headers.find(key);
     if (it != headers.end()) {
-        return std::stoi(it->second);
+        return std::stoull(it->second);
     }
     return def;
 }
@@ -917,7 +917,7 @@ template <typename T>
 bool read_content(Stream& strm, T& x, Progress progress = Progress())
 {
     if (has_header(x.headers, "Content-Length")) {
-        auto len = get_header_value_int(x.headers, "Content-Length", 0);
+        auto len = get_header_value_size(x.headers, "Content-Length", 0);
         if (len == 0) {
             const auto& encoding = get_header_value(x.headers, "Transfer-Encoding", 0, "");
             if (!strcasecmp(encoding, "chunked")) {
